@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Programación científica</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #20231f;
+      --muted: #656b61;
+      --paper: #f3efe5;
+      --card: #fffdf8;
+      --accent: #52745c;
+      --line: #ded9cc;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background: radial-gradient(ellipse at top left, #fffdf8 0, transparent 48%), var(--paper);
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    button { color: inherit; font: inherit; }
+
+    .deck {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    header, footer {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 16px clamp(18px, 5vw, 64px);
+      background: rgb(255 253 248 / 82%);
+    }
+
+    header { border-bottom: 1px solid var(--line); }
+    footer { border-top: 1px solid var(--line); }
+
+    .brand {
+      color: var(--muted);
+      font-size: 13px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+
+    #current-title {
+      margin-left: auto;
+      font-family: Georgia, serif;
+      font-size: 18px;
+    }
+
+    main { display: grid; place-items: center; padding: 32px 20px; }
+
+    .slide {
+      display: none;
+      width: min(100%, 900px);
+      padding: clamp(26px, 6vw, 64px);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--card);
+      box-shadow: 0 18px 55px rgb(52 47 35 / 8%);
+    }
+
+    .slide.active { display: block; }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font: 500 clamp(42px, 8vw, 76px)/1.02 Georgia, "Times New Roman", serif;
+      letter-spacing: -.04em;
+    }
+
+    .intro {
+      max-width: 62ch;
+      margin: 20px 0 32px;
+      color: var(--muted);
+      font-size: clamp(17px, 2.5vw, 21px);
+      line-height: 1.6;
+    }
+
+    .points {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .points.repair { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+    .point {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #faf8f1;
+    }
+
+    .point.audit { grid-column: 1 / -1; }
+
+    .point h2 {
+      margin: 0 0 8px;
+      font: 500 20px Georgia, serif;
+    }
+
+    .point p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.55;
+    }
+
+    .audit-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 5px 22px;
+      margin: 12px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .audit-list li {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .audit-list strong { color: var(--ink); font-variant-numeric: tabular-nums; }
+
+    .slide.charts { width: min(100%, 1120px); }
+
+    .chart-list { display: grid; gap: 18px; }
+
+    .chart-card {
+      padding: 20px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #faf8f1;
+    }
+
+    .chart-card h2 {
+      margin: 4px 0 12px;
+      font: 500 21px/1.3 Georgia, serif;
+    }
+
+    .chart-source {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .chart-card img {
+      display: block;
+      width: 100%;
+      max-height: 460px;
+      margin: 12px 0;
+      object-fit: contain;
+      object-position: center;
+      background: white;
+    }
+
+    .chart-table-wrap { overflow-x: auto; }
+
+    .chart-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .chart-table th, .chart-table td {
+      padding: 5px 8px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+    }
+
+    .chart-table th { color: var(--muted); font-weight: 600; }
+
+    .chart-note {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .tip {
+      margin: 22px 0 0;
+      padding-left: 14px;
+      border-left: 3px solid var(--accent);
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    button {
+      padding: 9px 16px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: var(--card);
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) { border-color: var(--accent); }
+    button:disabled { cursor: not-allowed; opacity: .45; }
+    button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+
+    button.primary { border-color: var(--accent); background: var(--accent); color: white; }
+
+    .progress {
+      height: 4px;
+      flex: 1;
+      overflow: hidden;
+      border-radius: 99px;
+      background: var(--line);
+    }
+
+    #progress-bar {
+      width: 33.333%;
+      height: 100%;
+      background: var(--accent);
+      transition: width .2s ease;
+    }
+
+    #position {
+      min-width: 48px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .key-hint { color: var(--muted); font-size: 12px; }
+
+    @media (max-width: 680px) {
+      .points { grid-template-columns: 1fr; }
+      .points.repair, .audit-list { grid-template-columns: 1fr; }
+      .point.audit { grid-column: auto; }
+      .chart-card { padding: 14px; }
+      header, footer { gap: 9px; padding: 12px; }
+      .key-hint { display: none; }
+      main { padding: 20px 12px; }
+      .slide { border-radius: 18px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="deck">
+    <header>
+      <div class="brand">Programación científica</div>
+      <div id="current-title" aria-live="polite">Reparación</div>
+    </header>
+
+    <main id="slides">
+      <section class="slide active" data-title="Reparación" aria-hidden="false">
+        <p class="eyebrow">01 · Limpieza documentada en main.ipynb</p>
+        <h1>Reparación</h1>
+        <p class="intro">El notebook lee <code>game_info_cleaned.parquet</code> con Spark (474.417 filas, 27 columnas), lo convierte a pandas y exporta <code>game_info_cleaned.csv</code>. La entrada no es CSV: no configura encoding, separador ni <code>na_values</code>.</p>
+        <div class="points repair">
+          <article class="point">
+            <h2>Parseo de tipos</h2>
+            <p><code>released</code> y <code>updated</code> pasan a fecha; <code>rating</code>, <code>metacritic</code> y <code>playtime</code> a número. Con <code>errors="coerce"</code>, los valores que no se convierten pasan a <code>NaT</code> o <code>NaN</code>; el notebook no cuenta esos casos por separado.</p>
+          </article>
+          <article class="point">
+            <h2>Cadenas vacías</h2>
+            <p>Reemplaza <code>''</code> por faltante en <code>slug</code>, <code>name</code>, <code>website</code>, <code>platforms</code>, <code>developers</code>, <code>genres</code> y <code>publishers</code>. Las demás columnas se conservan sin cambios.</p>
+          </article>
+          <article class="point audit">
+            <h2>Auditoría y decisiones</h2>
+            <p>Cuenta 1.770.755 celdas faltantes en total; estos son los nulos por columna que muestra el notebook. La limpieza no imputa ni elimina filas; no audita duplicados ni valores imposibles.</p>
+            <ul class="audit-list">
+              <li><span>metacritic</span><strong>469.684</strong></li>
+              <li><span>esrb_rating</span><strong>418.553</strong></li>
+              <li><span>website</span><strong>409.376</strong></li>
+              <li><span>publishers</span><strong>333.401</strong></li>
+              <li><span>genres</span><strong>103.185</strong></li>
+              <li><span>released</span><strong>24.199</strong></li>
+              <li><span>developers</span><strong>8.366</strong></li>
+              <li><span>platforms</span><strong>3.986</strong></li>
+              <li><span>name</span><strong>3</strong></li>
+              <li><span>slug</span><strong>2</strong></li>
+            </ul>
+          </article>
+        </div>
+        <p class="tip"><strong>Sin imputación:</strong> no se usa media, mediana, moda ni muestreo; no hay una comparación de desviación estándar antes y después de imputar.</p>
+      </section>
+
+      <section class="slide charts" data-title="Gráficos" aria-hidden="true">
+        <p class="eyebrow">02 · Figuras de descriptive_analysis.ipynb</p>
+        <h1>Gráficos</h1>
+        <p class="intro">El notebook no formula preguntas interrogativas para estas figuras; aquí se conservan literalmente sus encabezados de análisis y títulos, junto con los valores que grafican.</p>
+        <div class="chart-list">
+          <article class="chart-card">
+            <p class="chart-source"><strong>Encabezado:</strong> “CONCLUSIÓN ESTADÍSTICA: ANÁLISIS DE CALIDAD POR GÉNERO”</p>
+            <h2>Puntaje Promedio de Metacritic por Género Videojuego</h2>
+            <img src="metacritic_por_genero.png" alt="Barras de puntaje promedio de Metacritic para 19 géneros; Platformer es el mayor y Indie el menor.">
+            <div class="chart-table-wrap">
+              <table class="chart-table">
+                <thead><tr><th>Género</th><th>Promedio /100</th><th>Juegos</th></tr></thead>
+                <tbody>
+                  <tr><td>Platformer</td><td>77.45</td><td>260</td></tr>
+                  <tr><td>Massively Multiplayer</td><td>76.51</td><td>110</td></tr>
+                  <tr><td>Educational</td><td>76.50</td><td>16</td></tr>
+                  <tr><td>Card</td><td>76.00</td><td>29</td></tr>
+                  <tr><td>Puzzle</td><td>75.98</td><td>311</td></tr>
+                  <tr><td>Fighting</td><td>74.87</td><td>119</td></tr>
+                  <tr><td>RPG</td><td>74.74</td><td>1,023</td></tr>
+                  <tr><td>Sports</td><td>74.68</td><td>258</td></tr>
+                  <tr><td>Board Games</td><td>74.06</td><td>31</td></tr>
+                  <tr><td>Shooter</td><td>73.64</td><td>573</td></tr>
+                  <tr><td>Racing</td><td>73.50</td><td>262</td></tr>
+                  <tr><td>Family</td><td>73.05</td><td>84</td></tr>
+                  <tr><td>Strategy</td><td>73.02</td><td>941</td></tr>
+                  <tr><td>Casual</td><td>73.01</td><td>406</td></tr>
+                  <tr><td>Arcade</td><td>72.62</td><td>288</td></tr>
+                  <tr><td>Action</td><td>72.51</td><td>2,544</td></tr>
+                  <tr><td>Adventure</td><td>72.26</td><td>1,681</td></tr>
+                  <tr><td>Simulation</td><td>72.07</td><td>601</td></tr>
+                  <tr><td>Indie</td><td>71.67</td><td>1,561</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="chart-note">Línea de referencia: media de los 19 promedios por género, 73.03. Mayor promedio: Platformer (77.45); menor: Indie (71.67); brecha: 5.78 puntos.</p>
+          </article>
+
+          <article class="chart-card">
+            <p class="chart-source"><strong>Encabezado:</strong> “ANÁLISIS: TOP 10 JUEGOS CON MAYOR CANTIDAD DE RESEÑAS”</p>
+            <h2>Top 10 Juegos con Mayor Cantidad de Reseñas - Tiempo de Juego Promedio</h2>
+            <img src="top10_resenas_tiempo_juego.png" alt="Gráfica de horas de juego promedio para los diez juegos con más reseñas, con el conteo de reseñas.">
+            <div class="chart-table-wrap">
+              <table class="chart-table">
+                <thead><tr><th>Juego</th><th>Reseñas</th><th>Tiempo promedio (h)</th></tr></thead>
+                <tbody>
+                  <tr><td>Grand Theft Auto V</td><td>4,289</td><td>1.150000</td></tr>
+                  <tr><td>The Witcher 3: Wild Hunt</td><td>3,939</td><td>0.833333</td></tr>
+                  <tr><td>Portal 2</td><td>3,613</td><td>0.183333</td></tr>
+                  <tr><td>Portal</td><td>3,050</td><td>0.066667</td></tr>
+                  <tr><td>The Elder Scrolls V: Skyrim</td><td>3,033</td><td>0.733333</td></tr>
+                  <tr><td>Red Dead Redemption 2</td><td>2,949</td><td>0.333333</td></tr>
+                  <tr><td>God of War</td><td>2,904</td><td>0.333333</td></tr>
+                  <tr><td>BioShock Infinite</td><td>2,769</td><td>0.200000</td></tr>
+                  <tr><td>Tomb Raider (2013)</td><td>2,527</td><td>0.183333</td></tr>
+                  <tr><td>Half-Life 2</td><td>2,516</td><td>0.116667</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="chart-note">Promedio del Top 10: 0.41 h; máximo: 1.15 h; mínimo: 0.07 h. El notebook convierte playtime de minutos a horas dividiendo entre 60.</p>
+          </article>
+
+          <article class="chart-card">
+            <p class="chart-source"><strong>Encabezado:</strong> “ANÁLISIS: VALORACIÓN DE USUARIOS POR CLASIFICACIÓN ESRB”</p>
+            <h2>Satisfacción de Usuarios por Clasificación de Edad ESRB</h2>
+            <img src="rating_por_clasificacion_esrb.png" alt="Promedio de rating de usuarios por clasificación ESRB, de 0 a 5, con cantidad de juegos por categoría.">
+            <div class="chart-table-wrap">
+              <table class="chart-table">
+                <thead><tr><th>Clasificación ESRB</th><th>Rating promedio /5</th><th>Juegos</th></tr></thead>
+                <tbody>
+                  <tr><td>Rating Pending</td><td>3.736</td><td>14</td></tr>
+                  <tr><td>Mature</td><td>3.667</td><td>1,087</td></tr>
+                  <tr><td>Teen</td><td>3.519</td><td>1,576</td></tr>
+                  <tr><td>Everyone</td><td>3.514</td><td>615</td></tr>
+                  <tr><td>Adults Only</td><td>3.410</td><td>157</td></tr>
+                  <tr><td>Everyone 10+</td><td>3.352</td><td>1,094</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="chart-note">Promedio global (línea de referencia): 3.510; se analizaron 4,543 juegos.</p>
+          </article>
+
+          <article class="chart-card">
+            <p class="chart-source"><strong>Encabezado:</strong> “ANÁLISIS: TOP 8 DESARROLLADORES POR FRECUENCIA”</p>
+            <h2>Puntuación Promedio de Metacritic - Top 8 Desarrolladores</h2>
+            <img src="metacritic_por_desarrollador.png" alt="Promedio Metacritic de ocho desarrolladores más frecuentes, con cantidad de juegos.">
+            <div class="chart-table-wrap">
+              <table class="chart-table">
+                <thead><tr><th>Desarrollador</th><th>Metacritic promedio /100</th><th>Juegos</th></tr></thead>
+                <tbody>
+                  <tr><td>Nintendo</td><td>84.22</td><td>63</td></tr>
+                  <tr><td>Sony Interactive Entertainment</td><td>80.66</td><td>56</td></tr>
+                  <tr><td>Feral Interactive</td><td>80.22</td><td>65</td></tr>
+                  <tr><td>Capcom</td><td>77.74</td><td>65</td></tr>
+                  <tr><td>Ubisoft Montreal</td><td>77.69</td><td>54</td></tr>
+                  <tr><td>Electronic Arts</td><td>76.78</td><td>79</td></tr>
+                  <tr><td>Square Enix</td><td>75.18</td><td>76</td></tr>
+                  <tr><td>Ubisoft</td><td>74.39</td><td>94</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="chart-note">Promedio general de la muestra (línea de referencia): 73.1; Nintendo presenta el mayor promedio del Top 8.</p>
+          </article>
+
+          <article class="chart-card">
+            <p class="chart-source"><strong>Encabezado:</strong> “ANÁLISIS: COMPROMISO DEL USUARIO - TOP 10 TÍTULOS MÁS POPULARES”</p>
+            <h2>Compromiso del Usuario: Juegos Terminados vs Abandonados - Top 10 Títulos Populares</h2>
+            <img src="juegos_terminados_vs_abandonados.png" alt="Barras agrupadas comparan jugadores que terminaron o abandonaron cada uno de los diez títulos más populares.">
+            <div class="chart-table-wrap">
+              <table class="chart-table">
+                <thead><tr><th>Título</th><th>Terminados</th><th>Abandonados</th></tr></thead>
+                <tbody>
+                  <tr><td>Grand Theft Auto V</td><td>3,533</td><td>641</td></tr>
+                  <tr><td>Counter-Strike: Global Offensive</td><td>544</td><td>1,056</td></tr>
+                  <tr><td>Left 4 Dead 2</td><td>1,542</td><td>634</td></tr>
+                  <tr><td>Portal 2</td><td>3,414</td><td>324</td></tr>
+                  <tr><td>Tomb Raider (2013)</td><td>2,599</td><td>305</td></tr>
+                  <tr><td>Borderlands 2</td><td>1,495</td><td>788</td></tr>
+                  <tr><td>The Witcher 3: Wild Hunt</td><td>2,759</td><td>485</td></tr>
+                  <tr><td>Team Fortress 2</td><td>513</td><td>1,092</td></tr>
+                  <tr><td>The Elder Scrolls V: Skyrim</td><td>2,313</td><td>801</td></tr>
+                  <tr><td>PAYDAY 2</td><td>438</td><td>747</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <p class="chart-note">En el Top 10, Grand Theft Auto V registra más terminados (3,533); Team Fortress 2, más abandonos (1,092).</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="slide" data-title="Modelos de predicción" aria-hidden="true">
+        <p class="eyebrow">03 · modeloDePrediccionEric2.ipynb</p>
+        <h1>Modelos de predicción</h1>
+        <p class="intro">Clasificación de plataforma a partir de nombres y texto de proyectos. La variable objetivo se asignó mediante reglas, así que las métricas evalúan cuánto reproduce el modelo esas etiquetas automáticas.</p>
+        <div class="points repair">
+          <article class="point">
+            <h2>y · objetivo</h2>
+            <p><code>categoria_plataforma</code>, creada con reglas sobre <code>texto_registro</code>: Desktop Standalone (257,583), Web/HTML5 (111,748), Prototipo / Assets (104,803) y Multiplataforma (267).</p>
+          </article>
+          <article class="point">
+            <h2>X · variables incluidas</h2>
+            <p><code>slug_limpio</code> (TF-IDF de caracteres, n-gramas 2–5) y tres métricas: <code>longitud_slug</code>, <code>cantidad_palabras</code> y <code>tiene_guion</code>.</p>
+          </article>
+          <article class="point">
+            <h2>Variables excluidas</h2>
+            <p><code>texto_registro</code> se usa para construir <code>y</code>, no entra en <code>X</code>. No se incluyen las demás columnas originales; el transformador descarta cualquier columna restante (<code>remainder="drop"</code>).</p>
+          </article>
+          <article class="point">
+            <h2>Partición y modelo</h2>
+            <p><code>train_test_split(test_size=0.30, random_state=42, stratify=y)</code>: 70% entrenamiento y 30% test, conservando proporciones de clase. El clasificador final es <code>LinearSVC(class_weight="balanced")</code>.</p>
+          </article>
+          <article class="point">
+            <h2>Baseline · clase mayoritaria</h2>
+            <p>El notebook no calcula baseline. Como referencia derivada, predecir Desktop Standalone para todo el test da <strong>77,275 / 142,321 = 54.30% accuracy</strong> y <strong>17.59% F1 macro</strong>.</p>
+          </article>
+          <article class="point audit">
+            <h2>Resultado final en test</h2>
+            <p><strong>Accuracy: 57.33%</strong> · <strong>F1 macro: 59.14%</strong> · precision macro: 58.02% · recall macro: 60.50%. La accuracy supera el baseline derivado por <strong>3.03 puntos porcentuales</strong>.</p>
+          </article>
+        </div>
+        <p class="tip"><strong>Límite:</strong> como <code>y</code> se generó por reglas a partir del texto, el resultado no confirma por sí mismo la plataforma real de cada proyecto.</p>
+      </section>
+    </main>
+
+    <footer aria-label="Navegación de diapositivas">
+      <button type="button" id="previous" aria-label="Diapositiva anterior">← Anterior</button>
+      <div class="progress" aria-hidden="true"><div id="progress-bar"></div></div>
+      <span id="position" aria-live="polite">1 / 3</span>
+      <span class="key-hint">Usa ← y → para cambiar de diapositiva</span>
+      <button type="button" class="primary" id="next" aria-label="Diapositiva siguiente">Siguiente →</button>
+    </footer>
+  </div>
+
+  <script>
+    "use strict";
+
+    const slides = Array.from(document.querySelectorAll(".slide"));
+    const previousButton = document.getElementById("previous");
+    const nextButton = document.getElementById("next");
+    const currentTitle = document.getElementById("current-title");
+    const position = document.getElementById("position");
+    const progressBar = document.getElementById("progress-bar");
+    let activeSlide = 0;
+
+    function showSlide(index) {
+      activeSlide = Math.max(0, Math.min(slides.length - 1, index));
+      slides.forEach((slide, slideIndex) => {
+        const isActive = slideIndex === activeSlide;
+        slide.classList.toggle("active", isActive);
+        slide.setAttribute("aria-hidden", String(!isActive));
+      });
+      currentTitle.textContent = slides[activeSlide].dataset.title;
+      position.textContent = `${activeSlide + 1} / ${slides.length}`;
+      progressBar.style.width = `${(activeSlide + 1) / slides.length * 100}%`;
+      previousButton.disabled = activeSlide === 0;
+      nextButton.disabled = activeSlide === slides.length - 1;
+    }
+
+    previousButton.addEventListener("click", () => showSlide(activeSlide - 1));
+    nextButton.addEventListener("click", () => showSlide(activeSlide + 1));
+    document.addEventListener("keydown", (event) => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      const target = event.target;
+      if (target instanceof HTMLElement && (target.isContentEditable || target.matches("input, textarea, select"))) return;
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+        showSlide(activeSlide + 1);
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        showSlide(activeSlide - 1);
+      }
+    });
+
+    showSlide(0);
+  </script>
+</body>
+</html>
