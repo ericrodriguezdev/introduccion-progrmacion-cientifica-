@@ -143,9 +143,7 @@
 
     .audit-list strong { color: var(--ink); font-variant-numeric: tabular-nums; }
 
-    .slide.charts { width: min(100%, 1120px); }
-
-    .chart-list { display: grid; gap: 18px; }
+    .slide.charts, .slide.repair-slide { width: min(100%, 1120px); }
 
     .chart-card {
       padding: 20px;
@@ -164,6 +162,15 @@
       color: var(--muted);
       font-size: 13px;
       line-height: 1.5;
+    }
+
+    .chart-question {
+      margin: 0 0 12px;
+      padding: 11px 14px;
+      border-left: 3px solid var(--accent);
+      border-radius: 0 10px 10px 0;
+      background: var(--card);
+      line-height: 1.55;
     }
 
     .chart-card img {
@@ -271,45 +278,77 @@
     </header>
 
     <main id="slides">
-      <section class="slide active" data-title="Reparación" aria-hidden="false">
+      <section class="slide repair-slide active" data-title="Reparación" aria-hidden="false">
         <p class="eyebrow">01 · Limpieza documentada en main.ipynb</p>
         <h1>Reparación</h1>
         <p class="intro">El notebook lee <code>game_info_cleaned.parquet</code> con Spark (474.417 filas, 27 columnas), lo convierte a pandas y exporta <code>game_info_cleaned.csv</code>. La entrada no es CSV: no configura encoding, separador ni <code>na_values</code>.</p>
-        <div class="points repair">
-          <article class="point">
-            <h2>Parseo de tipos</h2>
-            <p><code>released</code> y <code>updated</code> pasan a fecha; <code>rating</code>, <code>metacritic</code> y <code>playtime</code> a número. Con <code>errors="coerce"</code>, los valores que no se convierten pasan a <code>NaT</code> o <code>NaN</code>; el notebook no cuenta esos casos por separado.</p>
-          </article>
-          <article class="point">
-            <h2>Cadenas vacías</h2>
-            <p>Reemplaza <code>''</code> por faltante en <code>slug</code>, <code>name</code>, <code>website</code>, <code>platforms</code>, <code>developers</code>, <code>genres</code> y <code>publishers</code>. Las demás columnas se conservan sin cambios.</p>
-          </article>
-          <article class="point audit">
-            <h2>Auditoría y decisiones</h2>
-            <p>Cuenta 1.770.755 celdas faltantes en total; estos son los nulos por columna que muestra el notebook. La limpieza no imputa ni elimina filas; no audita duplicados ni valores imposibles.</p>
-            <ul class="audit-list">
-              <li><span>metacritic</span><strong>469.684</strong></li>
-              <li><span>esrb_rating</span><strong>418.553</strong></li>
-              <li><span>website</span><strong>409.376</strong></li>
-              <li><span>publishers</span><strong>333.401</strong></li>
-              <li><span>genres</span><strong>103.185</strong></li>
-              <li><span>released</span><strong>24.199</strong></li>
-              <li><span>developers</span><strong>8.366</strong></li>
-              <li><span>platforms</span><strong>3.986</strong></li>
-              <li><span>name</span><strong>3</strong></li>
-              <li><span>slug</span><strong>2</strong></li>
-            </ul>
-          </article>
+        <p class="chart-note">La columna «Por qué» explica el efecto técnico de cada decisión; el notebook no documenta una justificación textual por variable.</p>
+        <div class="chart-table-wrap">
+          <table class="chart-table">
+            <thead><tr><th>Variable(s)</th><th>Decisión del notebook</th><th>Por qué / efecto</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><code>slug</code>, <code>name</code>, <code>website</code>, <code>platforms</code>, <code>developers</code>, <code>genres</code>, <code>publishers</code></td>
+                <td>Reemplazar la cadena vacía exacta <code>''</code> por <code>NaN</code>.</td>
+                <td>Hace que las celdas vacías se reconozcan como faltantes en la auditoría <code>isna()</code>, en vez de contarlas como texto presente. No rellena ni elimina la fila.</td>
+              </tr>
+              <tr>
+                <td><code>released</code></td>
+                <td><code>pd.to_datetime(errors="coerce")</code>.</td>
+                <td>Permite tratar el campo como fecha (por ejemplo, agrupar por año); fechas inválidas pasan a <code>NaT</code>, sin inventar una fecha.</td>
+              </tr>
+              <tr>
+                <td><code>updated</code></td>
+                <td><code>pd.to_datetime(errors="coerce")</code>.</td>
+                <td>Normaliza el tipo temporal; valores no parseables pasan a <code>NaT</code> en lugar de interrumpir el parseo.</td>
+              </tr>
+              <tr>
+                <td><code>rating</code></td>
+                <td><code>pd.to_numeric(errors="coerce")</code>.</td>
+                <td>Permite cálculos y resúmenes numéricos; entradas inválidas pasan a <code>NaN</code>.</td>
+              </tr>
+              <tr>
+                <td><code>metacritic</code></td>
+                <td><code>pd.to_numeric(errors="coerce")</code>.</td>
+                <td>Permite comparar y resumir puntajes; entradas inválidas pasan a <code>NaN</code>, no se imputan.</td>
+              </tr>
+              <tr>
+                <td><code>playtime</code></td>
+                <td><code>pd.to_numeric(errors="coerce")</code>.</td>
+                <td>Permite operar con tiempo de juego como cantidad; entradas inválidas pasan a <code>NaN</code>.</td>
+              </tr>
+              <tr>
+                <td><code>id</code>, <code>tba</code>, <code>rating_top</code>, <code>achievements_count</code>, <code>ratings_count</code>, <code>suggestions_count</code>, <code>game_series_count</code>, <code>reviews_count</code>, <code>esrb_rating</code>, <code>added_status_yet</code>, <code>added_status_owned</code>, <code>added_status_beaten</code>, <code>added_status_toplay</code>, <code>added_status_dropped</code>, <code>added_status_playing</code></td>
+                <td>Sin transformación adicional en la celda de limpieza.</td>
+                <td>Se conservan los valores y tipos que llegaron del Parquet; el notebook no define para estas variables imputación, conversión ni eliminación.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
+        <article class="point audit" style="margin-top:16px">
+          <h2>Auditoría y límites</h2>
+          <p>Tras el parseo hay 1.770.755 celdas faltantes en total. No se imputan ni se eliminan filas; tampoco se auditan duplicados o valores imposibles. Los errores de conversión no se cuentan por separado.</p>
+          <ul class="audit-list">
+            <li><span>metacritic</span><strong>469.684</strong></li>
+            <li><span>esrb_rating</span><strong>418.553</strong></li>
+            <li><span>website</span><strong>409.376</strong></li>
+            <li><span>publishers</span><strong>333.401</strong></li>
+            <li><span>genres</span><strong>103.185</strong></li>
+            <li><span>released</span><strong>24.199</strong></li>
+            <li><span>developers</span><strong>8.366</strong></li>
+            <li><span>platforms</span><strong>3.986</strong></li>
+            <li><span>name</span><strong>3</strong></li>
+            <li><span>slug</span><strong>2</strong></li>
+          </ul>
+        </article>
         <p class="tip"><strong>Sin imputación:</strong> no se usa media, mediana, moda ni muestreo; no hay una comparación de desviación estándar antes y después de imputar.</p>
       </section>
 
-      <section class="slide charts" data-title="Gráficos" aria-hidden="true">
-        <p class="eyebrow">02 · Figuras de descriptive_analysis.ipynb</p>
-        <h1>Gráficos</h1>
-        <p class="intro">El notebook no formula preguntas interrogativas para estas figuras; aquí se conservan literalmente sus encabezados de análisis y títulos, junto con los valores que grafican.</p>
-        <div class="chart-list">
-          <article class="chart-card">
+      <section class="slide charts" data-title="Género" aria-hidden="true">
+        <p class="eyebrow">02 · Gráfica 1 de 5 · descriptive_analysis.ipynb</p>
+        <h1>Metacritic por género</h1>
+        <article class="chart-card">
+            <p class="chart-question"><strong>Pregunta de análisis:</strong> ¿Cómo se compara el puntaje promedio de Metacritic entre géneros y cuáles son los extremos? (Redactada a partir de la figura; el notebook no la formula como pregunta.)</p>
             <p class="chart-source"><strong>Encabezado:</strong> “CONCLUSIÓN ESTADÍSTICA: ANÁLISIS DE CALIDAD POR GÉNERO”</p>
             <h2>Puntaje Promedio de Metacritic por Género Videojuego</h2>
             <img src="metacritic_por_genero.png" alt="Barras de puntaje promedio de Metacritic para 19 géneros; Platformer es el mayor y Indie el menor.">
@@ -339,10 +378,15 @@
                 </tbody>
               </table>
             </div>
-            <p class="chart-note">Línea de referencia: media de los 19 promedios por género, 73.03. Mayor promedio: Platformer (77.45); menor: Indie (71.67); brecha: 5.78 puntos.</p>
-          </article>
+            <p class="chart-note"><strong>Lectura:</strong> Platformer tiene el promedio más alto (77.45; n=260) e Indie el más bajo (71.67; n=1,561), una brecha de 5.78 puntos. La línea de referencia es la media de los 19 promedios por género: 73.03.</p>
+        </article>
+      </section>
 
-          <article class="chart-card">
+      <section class="slide charts" data-title="Reseñas y tiempo" aria-hidden="true">
+        <p class="eyebrow">03 · Gráfica 2 de 5 · descriptive_analysis.ipynb</p>
+        <h1>Reseñas y tiempo de juego</h1>
+        <article class="chart-card">
+            <p class="chart-question"><strong>Pregunta de análisis:</strong> Entre los diez juegos con más reseñas, ¿cuál muestra el mayor y el menor tiempo promedio de juego?</p>
             <p class="chart-source"><strong>Encabezado:</strong> “ANÁLISIS: TOP 10 JUEGOS CON MAYOR CANTIDAD DE RESEÑAS”</p>
             <h2>Top 10 Juegos con Mayor Cantidad de Reseñas - Tiempo de Juego Promedio</h2>
             <img src="top10_resenas_tiempo_juego.png" alt="Gráfica de horas de juego promedio para los diez juegos con más reseñas, con el conteo de reseñas.">
@@ -363,10 +407,15 @@
                 </tbody>
               </table>
             </div>
-            <p class="chart-note">Promedio del Top 10: 0.41 h; máximo: 1.15 h; mínimo: 0.07 h. El notebook convierte playtime de minutos a horas dividiendo entre 60.</p>
-          </article>
+            <p class="chart-note"><strong>Lectura:</strong> Grand Theft Auto V marca el máximo (1.15 h; 4,289 reseñas) y Portal el mínimo (0.066667 h; 3,050 reseñas). El promedio del Top 10 es 0.41 h; playtime se convirtió de minutos a horas dividiendo entre 60.</p>
+        </article>
+      </section>
 
-          <article class="chart-card">
+      <section class="slide charts" data-title="Clasificación ESRB" aria-hidden="true">
+        <p class="eyebrow">04 · Gráfica 3 de 5 · descriptive_analysis.ipynb</p>
+        <h1>Clasificación ESRB</h1>
+        <article class="chart-card">
+            <p class="chart-question"><strong>Pregunta de análisis:</strong> ¿Qué clasificación ESRB tiene el rating promedio más alto y cuál el más bajo?</p>
             <p class="chart-source"><strong>Encabezado:</strong> “ANÁLISIS: VALORACIÓN DE USUARIOS POR CLASIFICACIÓN ESRB”</p>
             <h2>Satisfacción de Usuarios por Clasificación de Edad ESRB</h2>
             <img src="rating_por_clasificacion_esrb.png" alt="Promedio de rating de usuarios por clasificación ESRB, de 0 a 5, con cantidad de juegos por categoría.">
@@ -383,10 +432,15 @@
                 </tbody>
               </table>
             </div>
-            <p class="chart-note">Promedio global (línea de referencia): 3.510; se analizaron 4,543 juegos.</p>
-          </article>
+            <p class="chart-note"><strong>Lectura:</strong> Rating Pending tiene el promedio más alto (3.736; n=14) y Everyone 10+ el más bajo (3.352; n=1,094). La media global es 3.510 y la diferencia entre extremos es 0.384 puntos.</p>
+        </article>
+      </section>
 
-          <article class="chart-card">
+      <section class="slide charts" data-title="Desarrolladores" aria-hidden="true">
+        <p class="eyebrow">05 · Gráfica 4 de 5 · descriptive_analysis.ipynb</p>
+        <h1>Desarrolladores</h1>
+        <article class="chart-card">
+            <p class="chart-question"><strong>Pregunta de análisis:</strong> Entre los ocho desarrolladores más frecuentes, ¿quién tiene el mayor y el menor puntaje promedio de Metacritic?</p>
             <p class="chart-source"><strong>Encabezado:</strong> “ANÁLISIS: TOP 8 DESARROLLADORES POR FRECUENCIA”</p>
             <h2>Puntuación Promedio de Metacritic - Top 8 Desarrolladores</h2>
             <img src="metacritic_por_desarrollador.png" alt="Promedio Metacritic de ocho desarrolladores más frecuentes, con cantidad de juegos.">
@@ -405,10 +459,15 @@
                 </tbody>
               </table>
             </div>
-            <p class="chart-note">Promedio general de la muestra (línea de referencia): 73.1; Nintendo presenta el mayor promedio del Top 8.</p>
-          </article>
+            <p class="chart-note"><strong>Lectura:</strong> Nintendo lidera con 84.22 puntos (n=63); Ubisoft queda al final del Top 8 con 74.39 (n=94). La línea de referencia del conjunto es 73.1.</p>
+        </article>
+      </section>
 
-          <article class="chart-card">
+      <section class="slide charts" data-title="Terminados y abandonados" aria-hidden="true">
+        <p class="eyebrow">06 · Gráfica 5 de 5 · descriptive_analysis.ipynb</p>
+        <h1>Juegos terminados y abandonados</h1>
+        <article class="chart-card">
+            <p class="chart-question"><strong>Pregunta de análisis:</strong> En los diez títulos más populares, ¿cuáles tienen más jugadores que los terminaron y que los abandonaron?</p>
             <p class="chart-source"><strong>Encabezado:</strong> “ANÁLISIS: COMPROMISO DEL USUARIO - TOP 10 TÍTULOS MÁS POPULARES”</p>
             <h2>Compromiso del Usuario: Juegos Terminados vs Abandonados - Top 10 Títulos Populares</h2>
             <img src="juegos_terminados_vs_abandonados.png" alt="Barras agrupadas comparan jugadores que terminaron o abandonaron cada uno de los diez títulos más populares.">
@@ -429,13 +488,12 @@
                 </tbody>
               </table>
             </div>
-            <p class="chart-note">En el Top 10, Grand Theft Auto V registra más terminados (3,533); Team Fortress 2, más abandonos (1,092).</p>
-          </article>
-        </div>
+            <p class="chart-note"><strong>Lectura:</strong> Grand Theft Auto V tiene más terminados (3,533); Team Fortress 2, más abandonados (1,092). Portal 2 combina 3,414 terminados con solo 324 abandonados.</p>
+        </article>
       </section>
 
       <section class="slide" data-title="Modelos de predicción" aria-hidden="true">
-        <p class="eyebrow">03 · modeloDePrediccionEric2.ipynb</p>
+        <p class="eyebrow">07 · modeloDePrediccionEric2.ipynb</p>
         <h1>Modelos de predicción</h1>
         <p class="intro">Clasificación de plataforma a partir de nombres y texto de proyectos. La variable objetivo se asignó mediante reglas, así que las métricas evalúan cuánto reproduce el modelo esas etiquetas automáticas.</p>
         <div class="points repair">
